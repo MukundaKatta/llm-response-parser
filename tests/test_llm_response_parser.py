@@ -97,6 +97,31 @@ def test_parse_json_raw_array():
     assert r.value == [1, 2, 3]
 
 
+def test_parse_json_raw_array_before_object():
+    # The array appears first in the text, so it must be returned, not the
+    # later object.
+    text = 'The list is [1, 2, 3] and the config is {"a": 1}'
+    r = parse_json(text)
+    assert r.ok
+    assert r.value == [1, 2, 3]
+
+
+def test_parse_json_raw_object_before_array():
+    text = 'config {"a": 1} then list [4, 5, 6]'
+    r = parse_json(text)
+    assert r.ok
+    assert r.value == {"a": 1}
+
+
+def test_parse_json_raw_unbalanced_object_falls_back_to_array():
+    # A stray "{" precedes a valid array; the scanner should skip the
+    # unbalanced object candidate and return the array.
+    text = "broken { not json here, but [1, 2, 3] is valid"
+    r = parse_json(text)
+    assert r.ok
+    assert r.value == [1, 2, 3]
+
+
 def test_parse_json_no_json():
     r = parse_json("This is plain text with no JSON.")
     assert not r.ok

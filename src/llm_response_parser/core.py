@@ -56,11 +56,21 @@ _INLINE_CODE_RE = re.compile(r"`([^`]+)`")
 
 
 def _find_json_object_or_array(text: str) -> str | None:
-    """Return the first JSON object or array found in *text*, or ``None``."""
+    """Return the first JSON object or array found in *text*, or ``None``.
+
+    "First" means the candidate whose opening delimiter (``{`` or ``[``)
+    appears earliest in *text*, so an array that precedes an object is
+    returned ahead of that object.
+    """
+    candidates = []
     for start_char, end_char in (("{", "}"), ("[", "]")):
         start = text.find(start_char)
-        if start == -1:
-            continue
+        if start != -1:
+            candidates.append((start, start_char, end_char))
+    # Try delimiters in the order they appear in the text.
+    candidates.sort()
+
+    for start, start_char, end_char in candidates:
         depth = 0
         in_string = False
         escape_next = False
